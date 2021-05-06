@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import "react-circular-progressbar/dist/styles.css";
+import swal from "sweetalert";
 import {
   Button,
   Checkbox,
@@ -10,6 +11,7 @@ import {
   ListItem,
   Grid,
   CircularProgress,
+  LinearProgress,
   IconButton,
 } from "@material-ui/core/";
 import { Delete } from "@material-ui/icons/";
@@ -92,6 +94,7 @@ function DropzoneComponent() {
   const [files, setFiles] = useState(types);
   const [saveFiles, setSaveFiles] = useState([]);
   const [loading, setLoading] = useState(false); //uploading
+  const [load, setLoad] = useState(false); //choosing
 
   const {
     getRootProps,
@@ -109,6 +112,7 @@ function DropzoneComponent() {
             return type.type;
           })
       : "",
+
     noClick: true,
     noKeyboard: true,
     onDrop: (acceptedFiles) => {
@@ -119,10 +123,21 @@ function DropzoneComponent() {
           })
         )
       );
+      setLoad(true);
+      setTimeout(() => {
+        setLoad(false);
+      }, 1000);
     },
     onDropRejected: (fileRejections) => {
       if (fileRejections.length) {
-        alert("Upload only selected files");
+        swal("Upload only selected files", {
+          icon: "warning",
+          dangerMode: true,
+          closeOnClickOutside: false,
+          closeOnEsc: false,
+        }).then(function () {
+          open();
+        });
       }
     },
   });
@@ -138,25 +153,31 @@ function DropzoneComponent() {
 
   const acceptedFilesItems = acceptedFiles.map((file, i) => {
     return (
-      <Grid container justify="center">
-        <List key={file.path}>
-          <ListItem>
-            <img
-              src={file.preview}
-              style={{ height: 180, width: 200 }}
-              alt=""
-            />{" "}
-            {file.path} - {file.size}bytes
-            <IconButton
-              aria-label="delete"
-              style={{ color: "#c21515" }}
-              onClick={() => removeItem(i)}
-            >
-              <Delete />
-            </IconButton>
-          </ListItem>
-        </List>
-      </Grid>
+      <div>
+        {!load ? (
+          <Grid container justify="center">
+            <List key={file.path}>
+              <ListItem>
+                <img
+                  src={file.preview}
+                  style={{ height: 80, width: 90 }}
+                  alt=""
+                />{" "}
+                {file.path} - {file.size}bytes
+                <IconButton
+                  aria-label="delete"
+                  style={{ color: "#c21515" }}
+                  onClick={() => removeItem(i)}
+                >
+                  <Delete />
+                </IconButton>
+              </ListItem>
+            </List>
+          </Grid>
+        ) : (
+          <LinearProgress value={load} />
+        )}
+      </div>
     );
   });
 
@@ -192,12 +213,17 @@ function DropzoneComponent() {
           setTimeout(() => {
             setLoading(false);
           }, 1000);
-          alert("File uploaded successfully");
+          swal(res["data"].msg, {
+            icon: "success",
+          });
         }
       })
       .catch((error) => {
         setLoading(false);
-        console.log(error);
+        swal("Something went wrong", {
+          icon: "error",
+          dangerMode: true,
+        });
       });
   };
 
@@ -268,7 +294,10 @@ function DropzoneComponent() {
         onClick={() => resetFilters()}
       >
         Reset
-      </Button>{" "}
+      </Button>
+      <br />
+      <br />
+      <br />
       {!loading ? (
         <Button
           size="large"
