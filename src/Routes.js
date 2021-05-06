@@ -11,7 +11,7 @@ function Routes() {
     <div>
       <BrowserRouter>
         <Switch>
-          <Route exact path="/rgu" component={SimpleDropzone} />
+          <Route exact path="/rdu" component={SimpleDropzone} />
           <Route exact path="/" component={DropzoneComponent} />
           <Route exact path="/mui" component={MaterialDropzone} />
           <Route exact path="/preview" component={ImagePreview} />

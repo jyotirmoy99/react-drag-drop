@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import "react-circular-progressbar/dist/styles.css";
 import {
@@ -10,8 +10,9 @@ import {
   ListItem,
   Grid,
   CircularProgress,
-  LinearProgress,
+  IconButton,
 } from "@material-ui/core/";
+import { Delete } from "@material-ui/icons/";
 // import { useHistory } from "react-router-dom";
 import axios from "axios";
 import { ApiUrl } from "./Service";
@@ -45,33 +46,52 @@ const rejectStyle = {
 };
 //***styling end***//
 
-function DropzoneComponent(props) {
+function DropzoneComponent() {
   // const history = useHistory();
+  const types = () => {
+    return [
+      { checked: false, type: ".jpg" },
+      { checked: false, type: ".jpeg" },
+      { checked: false, type: ".png" },
+      { checked: false, type: ".pdf" },
+      { checked: false, type: ".txt" },
+      { checked: false, type: ".doc" },
+      { checked: false, type: ".docx" },
+      { checked: false, type: ".gif" },
+      { checked: false, type: ".svg" },
+      { checked: false, type: ".pptx" },
+      { checked: false, type: ".zip" },
+      { checked: false, type: ".rar" },
+      { checked: false, type: ".xlsx" },
+      { checked: false, type: ".csv" },
+      { checked: false, type: ".m4a" },
+      { checked: false, type: ".mp4" },
+    ];
+  };
+  const selectTypes = () => {
+    return [
+      { checked: true, type: ".jpg" },
+      { checked: true, type: ".jpeg" },
+      { checked: true, type: ".png" },
+      { checked: true, type: ".pdf" },
+      { checked: true, type: ".txt" },
+      { checked: true, type: ".doc" },
+      { checked: true, type: ".docx" },
+      { checked: true, type: ".gif" },
+      { checked: true, type: ".svg" },
+      { checked: true, type: ".pptx" },
+      { checked: true, type: ".zip" },
+      { checked: true, type: ".rar" },
+      { checked: true, type: ".xlsx" },
+      { checked: true, type: ".csv" },
+      { checked: true, type: ".m4a" },
+      { checked: true, type: ".mp4" },
+    ];
+  };
 
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState(types);
   const [saveFiles, setSaveFiles] = useState([]);
-  const [progress, setProgress] = useState(false); //uploading
-  const [loading, setLoading] = useState(false); //image loading
-  const types = [
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".doc",
-    ".docx",
-    ".txt",
-    ".xlsx",
-    ".pdf",
-    ".gif",
-    ".mp4",
-    ".mp3",
-    ".svg",
-    ".pptx",
-    ".csv",
-  ];
-
-  useEffect(() => {
-    console.log(saveFiles);
-  }, [saveFiles]);
+  const [loading, setLoading] = useState(false); //uploading
 
   const {
     getRootProps,
@@ -82,28 +102,58 @@ function DropzoneComponent(props) {
     isDragReject,
     acceptedFiles,
   } = useDropzone({
-    accept: files || types,
+    accept: files.filter((type) => type.checked).length
+      ? files
+          .filter((type) => type.checked)
+          .map((type) => {
+            return type.type;
+          })
+      : "",
     noClick: true,
     noKeyboard: true,
     onDrop: (acceptedFiles) => {
-      files.length > 0
-        ? setSaveFiles(
-            acceptedFiles.map((file) =>
-              Object.assign(file, {
-                preview: URL.createObjectURL(file),
-              })
-            )
-          )
-        : alert("Select file type to upload");
+      setSaveFiles(
+        acceptedFiles.map((file) =>
+          Object.assign(file, {
+            preview: URL.createObjectURL(file),
+          })
+        )
+      );
+    },
+    onDropRejected: (fileRejections) => {
+      if (fileRejections.length) {
+        alert("Upload only selected files");
+      }
     },
   });
 
-  const filess = acceptedFiles.map((file) => {
+  //remove preview item
+
+  const removeItem = (file) => {
+    const newFiles = [...acceptedFilesItems]; // make a var for the new array
+    acceptedFiles.splice(file, 1); // remove the file from the array
+    setSaveFiles(newFiles);
+    console.log(newFiles);
+  };
+
+  const acceptedFilesItems = acceptedFiles.map((file, i) => {
     return (
       <Grid container justify="center">
         <List key={file.path}>
           <ListItem>
-            {file.path} - {file.type} - {file.size}bytes
+            <img
+              src={file.preview}
+              style={{ height: 180, width: 200 }}
+              alt=""
+            />{" "}
+            {file.path} - {file.size}bytes
+            <IconButton
+              aria-label="delete"
+              style={{ color: "#c21515" }}
+              onClick={() => removeItem(i)}
+            >
+              <Delete />
+            </IconButton>
           </ListItem>
         </List>
       </Grid>
@@ -120,34 +170,45 @@ function DropzoneComponent(props) {
     [isDragActive, isDragReject, isDragAccept]
   );
 
-  const getFileTypes = (e) => {
-    let types = files;
-    let index = types.indexOf(e.target.value);
-    if (index >= 0) {
-      types.splice(index, 1);
-    } else {
-      types.push(e.target.value);
-    }
-    setFiles([...types]);
+  const getFileTypes = (e, id) => {
+    let allfiles = files;
+    allfiles[id].checked = e;
+    setFiles([...allfiles]);
   };
 
   //handleSubmit
 
   const handleSubmit = () => {
     let formData = new FormData();
-    setProgress(true);
+    setLoading(true);
     saveFiles.map((file) => {
-      return formData.append("files", file);
+      return formData.append("file", file);
     });
-    axios.post(ApiUrl + "/upload", formData).then((res) => {
-      console.log(res);
-      if (res["data"].status === 200) {
-        setTimeout(() => {
-          setProgress(false);
-        }, 1000);
-        alert("File uploaded successfully");
-      }
-    });
+    axios
+      .post(ApiUrl + "/upload/multifileupload", formData)
+      .then((res) => {
+        console.log(res);
+        if (res["data"].status === 200) {
+          setTimeout(() => {
+            setLoading(false);
+          }, 1000);
+          alert("File uploaded successfully");
+        }
+      })
+      .catch((error) => {
+        setLoading(false);
+        console.log(error);
+      });
+  };
+
+  //checked all boxes
+  const selectAll = () => {
+    setFiles(selectTypes);
+  };
+
+  //unchecked all boxes
+  const resetFilters = () => {
+    setFiles(types);
   };
 
   return (
@@ -170,29 +231,45 @@ function DropzoneComponent(props) {
       </div>
       <Grid container justify="center">
         <FormGroup row>
-          {types.map((type, index) => {
+          {files.map((type, index) => {
             return (
               <FormControlLabel
                 key={index}
                 control={
                   <Checkbox
+                    checked={type.checked}
                     color="primary"
-                    onChange={getFileTypes}
-                    value={type}
+                    onChange={(e) => getFileTypes(e.target.checked, index)}
+                    value={type.type}
                   />
                 }
-                label={type}
+                label={type.type}
               />
             );
           })}
         </FormGroup>
       </Grid>
-      <div>{filess}</div>
+      <div>{acceptedFilesItems}</div>
       <br />
       <br />
-
       <br />
-      {!progress ? (
+      <Button
+        color="primary"
+        size="small"
+        variant="contained"
+        onClick={() => selectAll()}
+      >
+        Select All
+      </Button>{" "}
+      <Button
+        color="secondary"
+        size="small"
+        variant="contained"
+        onClick={() => resetFilters()}
+      >
+        Reset
+      </Button>{" "}
+      {!loading ? (
         <Button
           size="large"
           variant="contained"
@@ -203,8 +280,11 @@ function DropzoneComponent(props) {
           Upload
         </Button>
       ) : (
-        <CircularProgress value={progress} />
+        <CircularProgress value={loading} />
       )}
+      <br />
+      <br />
+      <br />
     </div>
   );
 }
