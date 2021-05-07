@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Dropzone from "react-dropzone-uploader";
 import "react-dropzone-uploader/dist/styles.css";
 // import { useHistory } from "react-router-dom";
-import axios from "axios";
+// import axios from "axios";
 import { ApiUrl } from "./Service";
 
 //Material UI
@@ -40,7 +40,7 @@ function SimpleDropzone() {
   };
 
   const [files, setFiles] = useState(types);
-  const [saveFiles, setSaveFiles] = useState([]);
+  // const [saveFiles, setSaveFiles] = useState([]);
   // const [loading, setLoading] = useState(false); //uploading
 
   const getUploadParams = ({ file }) => {

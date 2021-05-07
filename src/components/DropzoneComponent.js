@@ -11,7 +11,6 @@ import {
   ListItem,
   Grid,
   CircularProgress,
-  LinearProgress,
   IconButton,
 } from "@material-ui/core/";
 import { Delete } from "@material-ui/icons/";
@@ -95,6 +94,7 @@ function DropzoneComponent() {
   const [saveFiles, setSaveFiles] = useState([]);
   const [loading, setLoading] = useState(false); //uploading
   const [load, setLoad] = useState(false); //choosing
+  const [getAllFiles, setAllFiles] = useState([]); //combining all the files in an array
 
   const {
     getRootProps,
@@ -103,7 +103,6 @@ function DropzoneComponent() {
     isDragAccept,
     isDragActive,
     isDragReject,
-    acceptedFiles,
   } = useDropzone({
     accept: files.filter((type) => type.checked).length
       ? files
@@ -117,16 +116,13 @@ function DropzoneComponent() {
     noKeyboard: true,
     onDrop: (acceptedFiles) => {
       setSaveFiles(
-        acceptedFiles.map((file) =>
+        acceptedFiles.forEach((file) => {
+          getAllFiles.push(file);
           Object.assign(file, {
             preview: URL.createObjectURL(file),
-          })
-        )
+          });
+        })
       );
-      setLoad(true);
-      setTimeout(() => {
-        setLoad(false);
-      }, 1000);
     },
     onDropRejected: (fileRejections) => {
       if (fileRejections.length) {
@@ -146,15 +142,15 @@ function DropzoneComponent() {
 
   const removeItem = (file) => {
     const newFiles = [...acceptedFilesItems]; // make a var for the new array
-    acceptedFiles.splice(file, 1); // remove the file from the array
+    getAllFiles.splice(file, 1); // remove the file from the array
     setSaveFiles(newFiles);
     console.log(newFiles);
   };
 
-  const acceptedFilesItems = acceptedFiles.map((file, i) => {
+  const acceptedFilesItems = getAllFiles.map((file, i) => {
     return (
       <div>
-        {!load ? (
+        {
           <Grid container justify="center">
             <List key={file.path}>
               <ListItem>
@@ -174,9 +170,7 @@ function DropzoneComponent() {
               </ListItem>
             </List>
           </Grid>
-        ) : (
-          <LinearProgress value={load} />
-        )}
+        }
       </div>
     );
   });
@@ -202,9 +196,10 @@ function DropzoneComponent() {
   const handleSubmit = () => {
     let formData = new FormData();
     setLoading(true);
-    saveFiles.map((file) => {
+    getAllFiles.map((file) => {
       return formData.append("file", file);
     });
+    console.log(getAllFiles);
     axios
       .post(ApiUrl + "/upload/multifileupload", formData)
       .then((res) => {
@@ -224,6 +219,12 @@ function DropzoneComponent() {
           icon: "error",
           dangerMode: true,
         });
+        if (!navigator.onLine) {
+          swal("No Internet Connection", {
+            icon: "error",
+            dangerMode: true,
+          });
+        }
       });
   };
 
@@ -303,7 +304,7 @@ function DropzoneComponent() {
           size="large"
           variant="contained"
           color="primary"
-          disabled={acceptedFiles.length === 0}
+          disabled={getAllFiles.length === 0}
           onClick={handleSubmit}
         >
           Upload
