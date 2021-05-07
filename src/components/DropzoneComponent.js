@@ -13,25 +13,26 @@ import {
   CircularProgress,
   IconButton,
 } from "@material-ui/core/";
-import { Delete } from "@material-ui/icons/";
+import { Delete, CloudUpload } from "@material-ui/icons/";
 // import { useHistory } from "react-router-dom";
 import axios from "axios";
-import { ApiUrl } from "./Service";
+import { ApiUrl } from "../Service";
 
 //***styling start***//
 const baseStyle = {
-  margin: "auto",
+  flex: 1,
+  display: "flex",
+  flexDirection: "column",
   alignItems: "center",
-  padding: "20px",
+  padding: "50px",
   borderWidth: 2,
   borderRadius: 2,
   borderColor: "#eeeeee",
   borderStyle: "dashed",
   backgroundColor: "#fafafa",
   color: "#bdbdbd",
-  transition: "border .3s ease-in-out",
-  width: 500,
-  cursor: "pointer",
+  outline: "none",
+  transition: "border .24s ease-in-out",
 };
 
 const activeStyle = {
@@ -46,6 +47,8 @@ const rejectStyle = {
   borderColor: "#ff1744",
 };
 //***styling end***//
+
+let getAllFiles = [];
 
 function DropzoneComponent() {
   // const history = useHistory();
@@ -94,7 +97,6 @@ function DropzoneComponent() {
   const [saveFiles, setSaveFiles] = useState([]);
   const [loading, setLoading] = useState(false); //uploading
   const [load, setLoad] = useState(false); //choosing
-  const [getAllFiles, setAllFiles] = useState([]); //combining all the files in an array
 
   const {
     getRootProps,
@@ -118,11 +120,19 @@ function DropzoneComponent() {
       setSaveFiles(
         acceptedFiles.forEach((file) => {
           getAllFiles.push(file);
+          getAllFiles = getAllFiles.filter(
+            (value, index, arr) =>
+              arr.findIndex((item) => item.name === value.name) === index
+          );
           Object.assign(file, {
             preview: URL.createObjectURL(file),
           });
         })
       );
+      setLoad(true);
+      setTimeout(() => {
+        setLoad(false);
+      }, 1000);
     },
     onDropRejected: (fileRejections) => {
       if (fileRejections.length) {
@@ -144,7 +154,6 @@ function DropzoneComponent() {
     const newFiles = [...acceptedFilesItems]; // make a var for the new array
     getAllFiles.splice(file, 1); // remove the file from the array
     setSaveFiles(newFiles);
-    console.log(newFiles);
   };
 
   const acceptedFilesItems = getAllFiles.map((file, i) => {
@@ -162,7 +171,7 @@ function DropzoneComponent() {
                 {file.path} - {file.size}bytes
                 <IconButton
                   aria-label="delete"
-                  style={{ color: "#c21515" }}
+                  style={{ color: "#ff0000" }}
                   onClick={() => removeItem(i)}
                 >
                   <Delete />
@@ -191,8 +200,7 @@ function DropzoneComponent() {
     setFiles([...allfiles]);
   };
 
-  //handleSubmit
-
+  //***********UPLOAD FILE TO SERVER START********************/
   const handleSubmit = () => {
     let formData = new FormData();
     setLoading(true);
@@ -201,7 +209,7 @@ function DropzoneComponent() {
     });
     console.log(getAllFiles);
     axios
-      .post(ApiUrl + "/upload/multifileupload", formData)
+      .post(ApiUrl + "/upload", formData)
       .then((res) => {
         console.log(res);
         if (res["data"].status === 200) {
@@ -227,6 +235,7 @@ function DropzoneComponent() {
         }
       });
   };
+  //***********UPLOAD FILE TO SERVER END********************/
 
   //checked all boxes
   const selectAll = () => {
@@ -240,8 +249,6 @@ function DropzoneComponent() {
 
   return (
     <div className="container">
-      <h2>Drag and Drop</h2>
-      <br />
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
         <div>Drag and Drop Files Here</div>
@@ -249,13 +256,31 @@ function DropzoneComponent() {
         <br />
         <Button
           variant="outlined"
-          size="small"
-          color="primary"
           onClick={() => open()}
+          style={{ borderRadius: 50, color: "black" }}
         >
-          Choose
+          <CloudUpload />
         </Button>
       </div>
+      <br />
+      <Button
+        style={{ backgroundColor: "#2BBBAD", color: "white", borderRadius: 50 }}
+        size="small"
+        variant="contained"
+        onClick={() => selectAll()}
+      >
+        Select All
+      </Button>{" "}
+      <Button
+        style={{ backgroundColor: "#ff0000", color: "white", borderRadius: 50 }}
+        size="small"
+        variant="contained"
+        onClick={() => resetFilters()}
+      >
+        Reset All
+      </Button>
+      <br />
+      <br />
       <Grid container justify="center">
         <FormGroup row>
           {files.map((type, index) => {
@@ -279,26 +304,6 @@ function DropzoneComponent() {
       <div>{acceptedFilesItems}</div>
       <br />
       <br />
-      <br />
-      <Button
-        color="primary"
-        size="small"
-        variant="contained"
-        onClick={() => selectAll()}
-      >
-        Select All
-      </Button>{" "}
-      <Button
-        color="secondary"
-        size="small"
-        variant="contained"
-        onClick={() => resetFilters()}
-      >
-        Reset
-      </Button>
-      <br />
-      <br />
-      <br />
       {!loading ? (
         <Button
           size="large"
@@ -306,6 +311,7 @@ function DropzoneComponent() {
           color="primary"
           disabled={getAllFiles.length === 0}
           onClick={handleSubmit}
+          style={{ borderRadius: 50 }}
         >
           Upload
         </Button>

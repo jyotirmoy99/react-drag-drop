@@ -1,12 +1,14 @@
 import "./App.css";
-import Routes from "./Routes";
+import DropzoneComponent from "./components/DropzoneComponent";
 
 function App() {
   return (
     <div className="App">
       <br />
       <br />
-      <Routes />
+      <DropzoneComponent />
+      <br />
+      <br />
     </div>
   );
 }
