@@ -14,9 +14,8 @@ import {
   IconButton,
 } from "@material-ui/core/";
 import { Delete, CloudUpload } from "@material-ui/icons/";
-// import { useHistory } from "react-router-dom";
 import axios from "axios";
-import { ApiUrl } from "../Service";
+// import { ApiUrl } from "../Service";
 
 //***styling start***//
 const baseStyle = {
@@ -48,10 +47,9 @@ const rejectStyle = {
 };
 //***styling end***//
 
-let getAllFiles = [];
-
 function DropzoneComponent() {
-  // const history = useHistory();
+  let [getAllFiles, setAllFiles] = useState([]);
+
   const types = () => {
     return [
       { checked: false, type: ".jpg" },
@@ -72,31 +70,10 @@ function DropzoneComponent() {
       { checked: false, type: ".mp4" },
     ];
   };
-  const selectTypes = () => {
-    return [
-      { checked: true, type: ".jpg" },
-      { checked: true, type: ".jpeg" },
-      { checked: true, type: ".png" },
-      { checked: true, type: ".pdf" },
-      { checked: true, type: ".txt" },
-      { checked: true, type: ".doc" },
-      { checked: true, type: ".docx" },
-      { checked: true, type: ".gif" },
-      { checked: true, type: ".svg" },
-      { checked: true, type: ".pptx" },
-      { checked: true, type: ".zip" },
-      { checked: true, type: ".rar" },
-      { checked: true, type: ".xlsx" },
-      { checked: true, type: ".csv" },
-      { checked: true, type: ".m4a" },
-      { checked: true, type: ".mp4" },
-    ];
-  };
 
   const [files, setFiles] = useState(types);
   const [saveFiles, setSaveFiles] = useState([]);
   const [loading, setLoading] = useState(false); //uploading
-  const [load, setLoad] = useState(false); //choosing
 
   const {
     getRootProps,
@@ -118,21 +95,19 @@ function DropzoneComponent() {
     noKeyboard: true,
     onDrop: (acceptedFiles) => {
       setSaveFiles(
-        acceptedFiles.forEach((file) => {
-          getAllFiles.push(file);
-          getAllFiles = getAllFiles.filter(
+        acceptedFiles.map((file) => {
+          let files = getAllFiles;
+          files.push(file);
+          files = getAllFiles.filter(
             (value, index, arr) =>
               arr.findIndex((item) => item.name === value.name) === index
           );
+          setAllFiles(files);
           Object.assign(file, {
             preview: URL.createObjectURL(file),
           });
         })
       );
-      setLoad(true);
-      setTimeout(() => {
-        setLoad(false);
-      }, 1000);
     },
     onDropRejected: (fileRejections) => {
       if (fileRejections.length) {
@@ -151,38 +126,40 @@ function DropzoneComponent() {
   //remove preview item
 
   const removeItem = (file) => {
-    const newFiles = [...acceptedFilesItems]; // make a var for the new array
-    getAllFiles.splice(file, 1); // remove the file from the array
-    setSaveFiles(newFiles);
+    getAllFiles.splice(getAllFiles.indexOf(file), 1);
+    setAllFiles(getAllFiles);
+    setSaveFiles([...getAllFiles]);
   };
 
-  const acceptedFilesItems = getAllFiles.map((file, i) => {
-    return (
-      <div>
-        {
-          <Grid container justify="center">
-            <List key={file.path}>
-              <ListItem>
-                <img
-                  src={file.preview}
-                  style={{ height: 80, width: 90 }}
-                  alt=""
-                />{" "}
-                {file.path} - {file.size}bytes
-                <IconButton
-                  aria-label="delete"
-                  style={{ color: "#ff0000" }}
-                  onClick={() => removeItem(i)}
-                >
-                  <Delete />
-                </IconButton>
-              </ListItem>
-            </List>
-          </Grid>
-        }
-      </div>
-    );
-  });
+  const AcceptedFilesItems = () => {
+    return getAllFiles.map((file) => {
+      return (
+        <div>
+          {
+            <Grid container justify="center">
+              <List key={file.path}>
+                <ListItem>
+                  <img
+                    src={file.preview}
+                    style={{ height: 80, width: 90 }}
+                    alt=""
+                  />{" "}
+                  {file.path} - {file.size}bytes
+                  <IconButton
+                    aria-label="delete"
+                    style={{ color: "#ff0000" }}
+                    onClick={() => removeItem(file)}
+                  >
+                    <Delete />
+                  </IconButton>
+                </ListItem>
+              </List>
+            </Grid>
+          }
+        </div>
+      );
+    });
+  };
 
   const style = useMemo(
     () => ({
@@ -202,125 +179,132 @@ function DropzoneComponent() {
 
   //***********UPLOAD FILE TO SERVER START********************/
   const handleSubmit = () => {
-    let formData = new FormData();
-    setLoading(true);
-    getAllFiles.map((file) => {
-      return formData.append("file", file);
-    });
-    console.log(getAllFiles);
-    axios
-      .post(ApiUrl + "/upload", formData)
-      .then((res) => {
-        console.log(res);
-        if (res["data"].status === 200) {
-          setTimeout(() => {
-            setLoading(false);
-          }, 1000);
-          swal(res["data"].msg, {
-            icon: "success",
-          });
-        }
-      })
-      .catch((error) => {
-        setLoading(false);
-        swal("Something went wrong", {
-          icon: "error",
-          dangerMode: true,
-        });
-        if (!navigator.onLine) {
-          swal("No Internet Connection", {
-            icon: "error",
-            dangerMode: true,
-          });
-        }
+    if (getAllFiles.length === 0) {
+      swal("No files are selected", {
+        icon: "warning",
+        closeOnClickOutside: false,
+        closeOnEsc: false,
       });
+      return false;
+    }
+    if (navigator.onLine) {
+      setLoading(true);
+      let formData = new FormData();
+      getAllFiles.map((file) => {
+        return formData.append("files", file);
+      });
+      axios
+        .post(
+          "http://3.7.47.235:8443/api/Containers/draggable/upload",
+          formData
+        )
+        .then((res) => {
+          setLoading(false);
+          if (res && res.status === 200) {
+            swal("Image uploaded successfully!", {
+              icon: "success",
+              closeOnClickOutside: false,
+              closeOnEsc: false,
+            });
+            setAllFiles([]);
+          } else {
+            swal("Error occured while uploading", {
+              icon: "warning",
+              closeOnClickOutside: false,
+              closeOnEsc: false,
+            });
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+          setLoading(false);
+          swal("Something went wrong", {
+            icon: "error",
+            closeOnClickOutside: false,
+            closeOnEsc: false,
+          });
+        });
+    } else {
+      swal("No internet connection", {
+        icon: "warning",
+        closeOnClickOutside: false,
+        closeOnEsc: false,
+      });
+    }
   };
   //***********UPLOAD FILE TO SERVER END********************/
-
-  //checked all boxes
-  const selectAll = () => {
-    setFiles(selectTypes);
-  };
 
   //unchecked all boxes
   const resetFilters = () => {
     setFiles(types);
   };
 
+  //checked all boxes
+  const selectAll = (checked) => {
+    let arr = files;
+    arr.forEach((item) => {
+      item.checked = checked;
+      setFiles([...arr]);
+    });
+  };
+
   return (
     <div className="container">
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
-        <div>Drag and Drop Files Here</div>
-        <br />
-        <br />
-        <Button
-          variant="outlined"
-          onClick={() => open()}
-          style={{ borderRadius: 50, color: "black" }}
-        >
-          <CloudUpload />
+        <p>Drag and drop some files here...</p>
+        <Button variant="contained" color="secondary" onClick={() => open()}>
+          Choose
         </Button>
       </div>
-      <br />
-      <Button
-        style={{ backgroundColor: "#2BBBAD", color: "white", borderRadius: 50 }}
-        size="small"
-        variant="contained"
-        onClick={() => selectAll()}
-      >
-        Select All
-      </Button>{" "}
-      <Button
-        style={{ backgroundColor: "#ff0000", color: "white", borderRadius: 50 }}
-        size="small"
-        variant="contained"
-        onClick={() => resetFilters()}
-      >
-        Reset All
-      </Button>
-      <br />
-      <br />
-      <Grid container justify="center">
-        <FormGroup row>
-          {files.map((type, index) => {
-            return (
-              <FormControlLabel
-                key={index}
-                control={
-                  <Checkbox
-                    checked={type.checked}
-                    color="primary"
-                    onChange={(e) => getFileTypes(e.target.checked, index)}
-                    value={type.type}
-                  />
-                }
-                label={type.type}
-              />
-            );
-          })}
-        </FormGroup>
-      </Grid>
-      <div>{acceptedFilesItems}</div>
-      <br />
-      <br />
-      {!loading ? (
+      <FormGroup row>
+        <FormControlLabel
+          control={
+            <Checkbox
+              color="secondary"
+              onChange={(event) => selectAll(event.target.checked)}
+            />
+          }
+          label="Select all"
+        />
+        {files.map((type, index) => {
+          return (
+            <FormControlLabel
+              key={index}
+              control={
+                <Checkbox
+                  checked={type.checked}
+                  color="secondary"
+                  onChange={(evt) => getFileTypes(evt.target.checked, index)}
+                  value={type.type}
+                />
+              }
+              label={type.type}
+            />
+          );
+        })}
         <Button
-          size="large"
-          variant="contained"
-          color="primary"
-          disabled={getAllFiles.length === 0}
-          onClick={handleSubmit}
-          style={{ borderRadius: 50 }}
+          variant="outlined"
+          color="secondary"
+          style={{ marginLeft: "auto" }}
+          onClick={() => resetFilters()}
         >
-          Upload
+          Reset
         </Button>
-      ) : (
-        <CircularProgress value={loading} />
-      )}
-      <br />
-      <br />
-      <br />
+      </FormGroup>
+      <ul style={{ listStyle: "none" }}>
+        <AcceptedFilesItems />
+      </ul>
+      {loading ? <CircularProgress variant="indeterminate" /> : null}
+      <Button
+        onClick={() => handleSubmit()}
+        variant="contained"
+        color="secondary"
+        disabled={getAllFiles.length === 0 || loading}
+        endIcon={<CloudUpload />}
+      >
+        Upload
+      </Button>
     </div>
   );
 }
