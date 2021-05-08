@@ -284,9 +284,9 @@ function DropzoneComponent() {
           );
         })}
         <Button
+          size="small"
           variant="outlined"
           color="secondary"
-          style={{ marginLeft: "auto" }}
           onClick={() => resetFilters()}
         >
           Reset

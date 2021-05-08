@@ -1,10 +1,10 @@
 import "./App.css";
-import DropzoneComponent from "./components/DropzoneComponent";
+import Routes from "./Routes";
 
 function App() {
   return (
     <div className="App">
-      <DropzoneComponent />
+      <Routes />
     </div>
   );
 }
