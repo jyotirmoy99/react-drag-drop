@@ -4,16 +4,16 @@ import "react-circular-progressbar/dist/styles.css";
 import swal from "sweetalert";
 import {
   Button,
-  Checkbox,
-  FormGroup,
-  FormControlLabel,
   List,
   ListItem,
   Grid,
   CircularProgress,
   IconButton,
 } from "@material-ui/core/";
+import { Close, CloudUpload } from "@material-ui/icons/";
 import axios from "axios";
+
+import "./patients.css";
 // import { ApiUrl } from "../Service";
 
 //***styling start***//
@@ -25,10 +25,10 @@ const baseStyle = {
   padding: "50px",
   borderWidth: 2,
   borderRadius: 2,
-  borderColor: "#eeeeee",
+  borderColor: "#0071ce",
   borderStyle: "dashed",
-  backgroundColor: "#fafafa",
-  color: "#bdbdbd",
+  backgroundColor: "#e9f5ff",
+  color: "#000",
   outline: "none",
   transition: "border .24s ease-in-out",
 };
@@ -51,28 +51,6 @@ function FileUploaderComponent() {
 
   const [array, setArray] = useState([]);
 
-  const types = () => {
-    return [
-      { checked: false, type: ".jpg" },
-      { checked: false, type: ".jpeg" },
-      { checked: false, type: ".png" },
-      { checked: false, type: ".pdf" },
-      { checked: false, type: ".txt" },
-      { checked: false, type: ".doc" },
-      { checked: false, type: ".docx" },
-      { checked: false, type: ".gif" },
-      { checked: false, type: ".svg" },
-      { checked: false, type: ".pptx" },
-      { checked: false, type: ".zip" },
-      { checked: false, type: ".rar" },
-      { checked: false, type: ".xlsx" },
-      { checked: false, type: ".csv" },
-      { checked: false, type: ".m4a" },
-      { checked: false, type: ".mp4" },
-    ];
-  };
-
-  const [files, setFiles] = useState(types);
   const [saveFiles, setSaveFiles] = useState([]);
   const [loading, setLoading] = useState(false); //uploading
 
@@ -84,14 +62,6 @@ function FileUploaderComponent() {
     isDragActive,
     isDragReject,
   } = useDropzone({
-    accept: files.filter((type) => type.checked).length
-      ? files
-          .filter((type) => type.checked)
-          .map((type) => {
-            return type.type;
-          })
-      : "",
-
     noClick: true,
     noKeyboard: true,
     onDrop: (acceptedFiles) => {
@@ -124,6 +94,38 @@ function FileUploaderComponent() {
       }
     },
   });
+
+  const removeItem = (file) => {
+    getAllFiles.splice(getAllFiles.indexOf(file), 1);
+    setAllFiles(getAllFiles);
+    setSaveFiles([...getAllFiles]);
+    console.log(getAllFiles);
+  };
+
+  const AcceptedFilesItems = () => {
+    return getAllFiles.map((file) => {
+      return (
+        <div>
+          {
+            <Grid container justify="center">
+              <List>
+                <ListItem style={{ color: "black", alignItems: "left" }}>
+                  {file.name} - {file.size}bytes
+                  <IconButton
+                    aria-label="delete"
+                    style={{ color: "#ff0000" }}
+                    onClick={() => removeItem(file)}
+                  >
+                    <Close />
+                  </IconButton>
+                </ListItem>
+              </List>
+            </Grid>
+          }
+        </div>
+      );
+    });
+  };
 
   //
   //
@@ -170,16 +172,16 @@ function FileUploaderComponent() {
         .then((res) => {
           setLoading(false);
           if (res && res.status === 200) {
-            swal("Image uploaded successfully!", {
-              icon: "success",
-              closeOnClickOutside: false,
-              closeOnEsc: false,
-            });
+            // swal("Image uploaded successfully!", {
+            //   icon: "success",
+            //   closeOnClickOutside: false,
+            //   closeOnEsc: false,
+            // });
             res.data.result.files.files.map((value) => {
               return array.push(value.name);
             });
             console.log(array);
-            setAllFiles([]);
+            // setAllFiles([]);
           } else {
             swal("Error occured while uploading", {
               icon: "warning",
@@ -213,14 +215,24 @@ function FileUploaderComponent() {
   //
   //************DRAG AND DROP START***************/
   return (
-    <div className="container">
-      <h3>Upload Large File</h3>
+    <div className="container patients">
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
-        <p>Drag and drop some files here...</p>
-        <Button variant="contained" color="secondary" onClick={() => open()}>
-          Choose
+        <p>
+          <CloudUpload style={{ color: "grey" }} />
+        </p>
+        <p>Drag and drop files here</p>
+        <p>or</p>
+        <Button
+          variant="outlined"
+          style={{ color: "#0071ce", border: "2px solid #0071ce" }}
+          size="small"
+          onClick={() => open()}
+        >
+          Browse File
         </Button>
+        <br />
+        <AcceptedFilesItems />
       </div>
 
       {loading ? <CircularProgress variant="indeterminate" /> : null}
