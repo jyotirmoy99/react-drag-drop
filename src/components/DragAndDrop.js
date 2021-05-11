@@ -7,12 +7,14 @@ import Checkbox from "@material-ui/core/Checkbox";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import axios from "axios";
+// import _ from "lodash";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { Close, CloudUpload } from "@material-ui/icons/";
 import { IconButton } from "@material-ui/core";
 import { FadeLoader } from "react-spinners";
 import swal from "sweetalert";
 import _ from "lodash";
+import Progress from "./Progress";
 const URLDATA = "http://3.7.47.235:8443/api/Containers/draggable/upload";
 
 const baseStyle = {
@@ -47,10 +49,11 @@ const rejectStyle = {
 export default function DragAndDrop(props) {
   let [allFiles, setFile] = useState([]);
   const [draggedFiles, setDraggedFiles] = useState([]);
-  const [isLoading, setProgress] = useState(false);
-  const [arr, setArr] = useState([]);
-  const [uploading, setUploading] = useState(false);
+  const [isLoading, setLoading] = useState(false);
+  // const [arr, setArr] = useState([]);
+  // const [uploading, setUploading] = useState(false);
   const [files, setFiles] = useState("");
+  const [uploadPercentage, setUploadPercentage] = useState(0);
   const {
     getRootProps,
     getInputProps,
@@ -59,7 +62,7 @@ export default function DragAndDrop(props) {
     isDragAccept,
     isDragReject,
   } = useDropzone({
-    accept: ".jpg, .jpeg,.png,.mp4,.mp3",
+    accept: ".jpg, .jpeg, .png, .mp4, .mp3",
     noClick: true,
     noKeyboard: true,
     onDrop: (acceptedFiles) => {
@@ -205,6 +208,14 @@ export default function DragAndDrop(props) {
         headers: {
           access_token: localStorage.getItem("token"),
         },
+        onUploadProgress: (ProgressEvent) => {
+          setUploadPercentage(
+            parseInt(
+              Math.round((ProgressEvent.loaded * 100) / ProgressEvent.total)
+            )
+          );
+          setTimeout(() => setUploadPercentage(0), 10000);
+        },
         // signal: signal,
       };
       // this.setState({
@@ -212,7 +223,7 @@ export default function DragAndDrop(props) {
       //   uploading: true,
       //   filename: [],
       // });
-      setProgress(true);
+      setLoading(true);
       let uploadingFile = await Promise.all(
         batchfiles.map(async (batchItem, batchIndex) => {
           formData.delete("ctscans");
@@ -252,7 +263,7 @@ export default function DragAndDrop(props) {
       if (
         FileStatus.filter((item) => item.status).length === FileStatus.length
       ) {
-        setProgress(false);
+        setLoading(false);
       }
     }
   };
@@ -297,6 +308,7 @@ export default function DragAndDrop(props) {
                     }
                     className="uploadingLoader"
                   />
+                  <Progress percentage={uploadPercentage} />
                   <h4>
                     {/* Uploaded {fileCount} out of {files.length} files */}
                   </h4>
