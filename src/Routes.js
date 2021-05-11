@@ -1,7 +1,6 @@
 import React from "react";
 import DropzoneComponent from "./components/DropzoneComponent";
-import FileUploaderComponent from "./components/FileUploaderComponent";
-import FileUploader from "./components/FileUploader";
+import DragAndDrop from "./components/DragAndDrop";
 
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 
@@ -11,8 +10,7 @@ function Routes() {
       <BrowserRouter>
         <Switch>
           <Route exact path="/" component={DropzoneComponent} />
-          <Route exact path="/FileUploader" component={FileUploaderComponent} />
-          <Route exact path="/upload" component={FileUploader} />
+          <Route exact path="/upload" component={DragAndDrop} />
         </Switch>
       </BrowserRouter>
     </div>

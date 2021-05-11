@@ -1,0 +1,7 @@
+ul,
+li {
+  display: inline;
+  margin-right: auto;
+  list-style: none;
+  font-size: small;
+}
